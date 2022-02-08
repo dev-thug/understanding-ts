@@ -113,6 +113,7 @@ it.printEmployeeInformation();
 console.log(it);
 
 // const accounting = new AccountingDepartment("d2", []);
+// to singletone pattern
 const accounting = AccountingDepartment.getInstance();
 
 accounting.mostRecentReport = "Year End Report";

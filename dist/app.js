@@ -107,6 +107,7 @@ it.describe();
 it.printEmployeeInformation();
 console.log(it);
 // const accounting = new AccountingDepartment("d2", []);
+// to singletone pattern
 var accounting = AccountingDepartment.getInstance();
 accounting.mostRecentReport = "Year End Report";
 accounting.addReport("Someting went wrong...");
