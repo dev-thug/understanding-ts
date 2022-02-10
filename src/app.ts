@@ -1,80 +1,169 @@
-// const names: Array<string> = ["Hyunjoong", "Max", "Manuel"];
-// // names[0].split(" ");
+function Logger(logString: string) {
+  console.log("LOGGER FACTORY");
 
-// const promise:Promise<string> = new Promise((resolve, reject) => {
-//   setTimeout(() => {
-//     resolve("This is done!");
-//   }, 2000);
-// });
-
-// promise.then(data => {
-//     data.split(" ");
-// })
-
-function merge<T extends object, U extends object>(objA: T, objB: U) {
-  return Object.assign(objA, objB);
+  return function (constructor: Function) {
+    console.log(logString);
+    console.log(constructor);
+  };
 }
 
-const mergeObj = merge({ name: "Hyunjoong", hobbies: ["Sports"] }, { age: 28 });
-console.log(mergeObj);
+function WithTemplate(template: string, hookId: string) {
+  console.log("TEMPLATE FACTORY");
+  return function<T extends {new(...args:any): {name:string}}> (originalConstructor: T) {
+    console.log("Rendering template");
 
-interface Lengthy {
-  length: number;
+    return class extends originalConstructor {
+      constructor(..._:any) {
+        super();
+
+        const hookEl = document.getElementById(hookId);
+        
+        if (hookEl) {
+          hookEl.innerHTML = template;
+          hookEl.querySelector("h1")!.textContent = this.name;
+        }
+      }
+    };
+  };
 }
 
-function countAndDescribe<T extends Lengthy>(element: T) {
-  let descriptionText = "Got no value.";
-  if (element.length === 1) {
-    descriptionText = "Got 1 value.";
-  } else if (element.length > 1) {
-    descriptionText = "Got " + element.length + " elements.";
+// @Logger("LOGGING - PERSON")
+@Logger("LOGGER")
+@WithTemplate("<h1>My Person Object</h1>", "app")
+class Person {
+  name = "Hyunjoong";
+
+  constructor() {
+    console.log("Creating person object...");
   }
-  return [element, descriptionText];
 }
 
-console.log(countAndDescribe(["Sports", "Cooking"]));
+const person = new Person();
 
-function extractAndConvert<T extends object, U extends keyof T>(
-  obj: T,
-  key: U
+console.log(person);
+
+// ---
+
+function Log(target: any, propertyName: string | Symbol) {
+  console.log("Property decorator!");
+  console.log(target, propertyName);
+}
+
+function Log2(target: any, name: string, descriptor: PropertyDescriptor) {
+  console.log("Accessor decorator!");
+  console.log(target);
+  console.log(name);
+  console.log(descriptor);
+  
+}
+
+function Log3(
+  target: any,
+  name: string | Symbol,
+  descriptor: PropertyDescriptor
 ) {
-  return "Value: " + obj[key];
+  console.log("Method decorator!");
+  console.log(target);
+  console.log(name);
+  console.log(descriptor);
 }
 
-extractAndConvert({ name: "Hyunjoong" }, "name");
+function Log4(target: any, name: string | Symbol, position: number) {
+  console.log("Parameter decorator!");
+  console.log(target);
+  console.log(name);
+  console.log(position);
+}
 
-class DataStorage<T extends string | number | boolean> {
-  private data: T[] = [];
+class Product {
+  @Log
+  title: string;
+  private _price: number;
 
-  addItem(item: T) {
-    this.data.push(item);
-  }
-
-  removeItem(item: T) {
-    if (this.data.indexOf(item)) {
-      return;
+  @Log2
+  set price(val: number) {
+    if (val > 0) {
+      this._price = val;
+    } else {
+      throw new Error("Invalid price - should be positive!");
     }
-    this.data.splice(this.data.indexOf(item), 1);
   }
 
-  getItems() {
-    return [...this.data];
+  constructor(t: string, p: number) {
+    this.title = t;
+    this._price = p;
+  }
+
+  @Log3
+  getPriceWithTax(@Log4 tax: number) {
+    return this.price * (1 + tax);
   }
 }
 
-const textStorage = new DataStorage<string>();
-textStorage.addItem("Hyunjoong");
-textStorage.addItem("Max");
-textStorage.addItem("Manu");
-textStorage.removeItem("Max");
-console.log(textStorage.getItems());
+function Autobind(_:any, _2: string, descriptor: PropertyDescriptor) {
+  const origianlMethod = descriptor.value;
+  const adjDescriptor: PropertyDescriptor = {
+    configurable: true,
+    enumerable: false,
+    get(){
+      const boundFn = origianlMethod.bind(this);
+      return boundFn;
+    }
+  };
+  return adjDescriptor;
+}
 
-const numberStorage = new DataStorage<number>();
+class Printer{
+  message = "This works!"
 
-const objStoreage = new DataStorage<object>();
-objStoreage.addItem({ name: "Hyunjoong" });
-objStoreage.addItem({ name: "Max" });
-objStoreage.addItem({ name: "Manu" });
-// ...
-objStoreage.removeItem({ name: "Max" });
-console.log(objStoreage.getItems());
+  @Autobind
+  showMessage(){
+    console.log(this.message); 
+  }
+}
+
+const p = new Printer();
+
+const button = document.querySelector("button")!
+button.addEventListener("click", p.showMessage);
+
+// ---
+
+interface ValidatorConfig {
+  [property: string]: {
+    [validatableProp: string]: string[];
+  };
+}
+
+const registeredValidators: ValidatorConfig = {};
+
+function Required() {}
+
+function PositiveNumber() {}
+
+function validate(obj: object){}
+
+class Course{
+  @Required
+  title: string;
+  @PositiveNumber
+  price: number;
+
+  constructor(t: string, p:number){
+    this.title = t;
+    this.price = p;
+  }
+}
+
+const courseForm = document.querySelector("form")!
+courseForm.addEventListener("submit", event => {
+  event.preventDefault();
+  const titleEL = document.getElementById("title") as HTMLInputElement;
+  const priceEL = document.getElementById("price") as HTMLInputElement;
+
+  const title = titleEL.value;
+  const price = +priceEL.value;
+
+  const createdCourse = new Course(title, price);
+  console.log(createdCourse)
+})
