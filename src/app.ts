@@ -179,6 +179,17 @@ const promise = (state: boolean) => {
     }, 1000);
   });
 };
+const promise2 = (state: boolean) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (state) {
+        resolve("fulfilled 2");
+      } else {
+        reject("reject 2");
+      }
+    }, 1000);
+  });
+};
 
 promise(false)
   .then((result) => {
@@ -187,3 +198,11 @@ promise(false)
   .catch((error) => {
     console.log(error);
   });
+
+const run = async () => {
+  await promise(true)
+  await promise2(true) 
+}
+
+run()
+
